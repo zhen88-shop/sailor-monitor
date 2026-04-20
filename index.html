@@ -2,197 +2,121 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Sailor Piece: Elite Monitor</title>
+    <title>Sailor Piece: Global Stock Monitor</title>
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, sans-serif; 
-            background-color: #0b0b0b; 
-            color: white; 
-            padding: 20px; 
-            margin: 0;
-        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #0b0b0b; color: white; padding: 20px; margin: 0; }
         
         .header-section { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 25px; 
-            padding: 10px 20px;
-            background: #161616;
-            border-radius: 15px;
-            border: 1px solid #333;
-            position: sticky;
-            top: 10px;
-            z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center; 
+            margin-bottom: 10px; padding: 15px 20px; background: #161616; border-radius: 15px; border: 1px solid #333;
+            position: sticky; top: 10px; z-index: 1000;
         }
 
-        h2 { margin: 0; font-size: 1.5em; color: #fff; }
-        
-        /* 🔍 Search Bar Style */
+        /* 📊 แถบสรุปยอดรวม */
+        .summary-bar {
+            background: linear-gradient(90deg, #004d40, #00251a);
+            border: 1px solid #00ffcc; border-radius: 10px; padding: 12px 20px;
+            margin-bottom: 20px; display: none; /* ซ่อนไว้ก่อนจนกว่าจะค้นหา */
+            align-items: center; justify-content: space-between;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+        .summary-info { font-size: 1.1em; font-weight: bold; color: #00ffcc; }
+        .total-count { font-size: 1.5em; color: #fff; text-shadow: 0 0 10px #00ffcc; }
+
         #search-input { 
-            padding: 12px 25px; 
-            width: 350px; 
-            border-radius: 30px; 
-            border: 1px solid #444; 
-            background: #222; 
-            color: #00ffcc; 
-            font-size: 1em; 
-            outline: none; 
-            transition: 0.3s;
+            padding: 12px 25px; width: 350px; border-radius: 30px; border: 1px solid #444; 
+            background: #222; color: #00ffcc; font-size: 1em; outline: none; transition: 0.3s;
         }
-        #search-input:focus { 
-            border-color: #00ffcc; 
-            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3); 
-        }
+        #search-input:focus { border-color: #00ffcc; box-shadow: 0 0 15px rgba(0, 255, 204, 0.3); }
 
-        .grid-container { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-            gap: 20px; 
-        }
+        .grid-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .card { background: #181818; border: 1px solid #2a2a2a; border-radius: 12px; padding: 18px; position: relative; transition: 0.2s; }
+        .card:hover { border-color: #00ffcc; }
+        .card h3 { margin: 0 0 12px 0; color: #00ffcc; font-size: 1.1em; width: 70%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .update-time { font-size: 0.75em; color: #555; position: absolute; top: 20px; right: 18px; }
         
-        .card { 
-            background: #181818; 
-            border: 1px solid #2a2a2a; 
-            border-radius: 12px; 
-            padding: 18px; 
-            transition: 0.2s; 
-            position: relative;
-            overflow: hidden;
-        }
-        .card:hover { 
-            border-color: #00ffcc; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
+        .stat-bar { background: #222; padding: 8px; margin-bottom: 15px; border-radius: 8px; display: flex; justify-content: space-around; font-size: 0.85em; }
+        .money { color: #ffd700; }
+        .bounty { color: #ff4d4d; }
+
+        .item-list { list-style: none; padding: 0; margin: 0; max-height: 250px; overflow-y: auto; border-top: 1px solid #2a2a2a; }
+        .item-list li { padding: 8px 5px; display: flex; justify-content: space-between; font-size: 0.85em; border-bottom: 1px solid #222; }
         
-        .card h3 { 
-            margin: 0 0 12px 0; 
-            color: #00ffcc; 
-            font-size: 1.2em; 
-            width: 70%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .update-time { 
-            font-size: 0.75em; 
-            color: #555; 
-            position: absolute; 
-            top: 20px; 
-            right: 18px; 
-        }
-        
-        .stat-bar { 
-            background: #222; 
-            padding: 10px; 
-            margin-bottom: 15px; 
-            border-radius: 8px; 
-            display: flex; 
-            justify-content: space-around; 
-            font-size: 0.9em; 
-        }
-        .money { color: #ffd700; font-weight: bold; }
-        .bounty { color: #ff4d4d; font-weight: bold; }
-
-        .item-list { 
-            list-style: none; 
-            padding: 0; 
-            margin: 0; 
-            max-height: 250px; 
-            overflow-y: auto; 
-            border-top: 1px solid #2a2a2a;
-        }
-        .item-list li { 
-            padding: 8px 5px; 
-            display: flex; 
-            justify-content: space-between; 
-            font-size: 0.85em; 
-            border-bottom: 1px solid #222;
-        }
-        .item-name { color: #aaa; }
-        .item-qty { color: #00ffcc; font-weight: bold; }
-
-        /* 🌟 Highlight & Sort Style */
-        .highlight-match { 
-            background-color: rgba(0, 255, 204, 0.15); 
-            border-left: 3px solid #00ffcc;
-            padding-left: 10px !important;
-        }
+        .highlight-match { background-color: rgba(0, 255, 204, 0.15); border-left: 3px solid #00ffcc; padding-left: 10px !important; }
         .highlight-match .item-name { color: #fff; font-weight: bold; }
-
-        /* Scrollbar */
-        .item-list::-webkit-scrollbar { width: 4px; }
-        .item-list::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        .item-qty { color: #00ffcc; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="header-section">
         <h2>🚢 Sailor Piece Monitor <span id="total-accs" style="color: #555; font-size: 0.6em; margin-left: 10px;"></span></h2>
-        <input type="text" id="search-input" placeholder="🔍 ค้นหาไอเทม (จะถูกดีดขึ้นบรรทัดแรก)..." onkeyup="renderDashboard()">
+        <input type="text" id="search-input" placeholder="🔍 ค้นหาไอเทมเพื่อรวมยอด..." onkeyup="renderDashboard()">
     </div>
 
-    <div class="grid-container" id="dashboard">
-        </div>
+    <div id="summary-container" class="summary-bar">
+        <div class="summary-info">📦 ผลรวมไอเทมที่ค้นหาจากทุกตัวละคร:</div>
+        <div id="total-sum-display" class="total-count">0</div>
+    </div>
+
+    <div class="grid-container" id="dashboard"></div>
 
     <script>
-        // เปลี่ยน URL เป็น Firebase ของคุณ
         const FIREBASE_URL = "https://test-29638-default-rtdb.asia-southeast1.firebasedatabase.app/inventory.json";
         let cachedData = {};
 
         async function fetchData() {
             try {
                 const response = await fetch(FIREBASE_URL);
-                if (!response.ok) throw new Error('Network response was not ok');
                 cachedData = await response.json();
                 renderDashboard();
-            } catch (e) { 
-                console.error("Fetch error:", e); 
-            }
+            } catch (e) { console.error("Error:", e); }
         }
 
         function renderDashboard() {
             const container = document.getElementById('dashboard');
-            const searchTag = document.getElementById('search-input').value.toLowerCase();
-            container.innerHTML = '';
+            const summaryBox = document.getElementById('summary-container');
+            const totalDisplay = document.getElementById('total-sum-display');
+            const searchTag = document.getElementById('search-input').value.toLowerCase().trim();
             
-            let count = 0;
+            container.innerHTML = '';
+            let globalTotal = 0; // ตัวแปรเก็บยอดรวมทั้งหมด
+            let activeAccs = 0;
+
             for (let id in cachedData) {
                 const acc = cachedData[id];
-                const username = (acc.username || 'Unknown').toLowerCase();
                 const items = acc.items || [];
-                
-                // ตรวจสอบการค้นหา
+                const username = (acc.username || 'Unknown').toLowerCase();
+
                 const itemMatch = items.some(i => i.toLowerCase().includes(searchTag));
                 const userMatch = username.includes(searchTag);
 
                 if (searchTag === "" || itemMatch || userMatch) {
-                    count++;
+                    activeAccs++;
                     const card = document.createElement('div');
                     card.className = 'card';
                     
-                    let bounty = "0", money = "0";
-                    let matchedHtml = ""; // สำหรับเก็บของที่ตรงคำค้นหา (Priority 1)
-                    let normalHtml = "";  // สำหรับของอื่นๆ
+                    let matchedHtml = "", normalHtml = "", money = "0", bounty = "0";
 
                     items.forEach(str => {
-                        const parts = str.split(':');
-                        const name = parts[0];
-                        const val = parts[1] || "0";
+                        const [name, val] = str.split(':');
+                        const qty = parseInt(val.replace(/,/g, '')) || 0;
 
                         if (name === "Bounty") bounty = val;
                         else if (name === "Money") money = val;
                         else {
                             const isMatch = searchTag !== "" && name.toLowerCase().includes(searchTag);
-                            const row = `
-                                <li class="${isMatch ? 'highlight-match' : ''}">
-                                    <span class="item-name">${name}</span>
-                                    <span class="item-qty">x${Number(val).toLocaleString()}</span>
-                                </li>`;
+                            const row = `<li class="${isMatch ? 'highlight-match' : ''}">
+                                <span class="item-name">${name}</span>
+                                <span class="item-qty">x${qty.toLocaleString()}</span>
+                            </li>`;
                             
-                            if (isMatch) matchedHtml += row;
-                            else normalHtml += row;
+                            if (isMatch) {
+                                matchedHtml += row;
+                                globalTotal += qty; // บวกยอดเข้าผลรวมกลาง
+                            } else {
+                                normalHtml += row;
+                            }
                         }
                     });
 
@@ -203,21 +127,24 @@
                             <span class="money">💰 ${Number(money).toLocaleString()}</span>
                             <span class="bounty">⚔️ ${Number(bounty).toLocaleString()}</span>
                         </div>
-                        <ul class="item-list">
-                            ${matchedHtml} 
-                            ${normalHtml || '<li>ว่างเปล่า</li>'}
-                        </ul>
+                        <ul class="item-list">${matchedHtml}${normalHtml}</ul>
                     `;
                     container.appendChild(card);
                 }
             }
-            document.getElementById('total-accs').innerText = `(พบ ${count} จอ)`;
+
+            // แสดง/ซ่อน แถบสรุปยอดรวม
+            if (searchTag !== "" && globalTotal > 0) {
+                summaryBox.style.display = 'flex';
+                totalDisplay.innerText = globalTotal.toLocaleString() + " ชิ้น";
+            } else {
+                summaryBox.style.display = 'none';
+            }
+            
+            document.getElementById('total-accs').innerText = `(พบ ${activeAccs} จอ)`;
         }
 
-        // อัปเดตอัตโนมัติทุก 10 วินาที
         setInterval(fetchData, 10000);
-        
-        // โหลดครั้งแรกทันที
         fetchData();
     </script>
 </body>
