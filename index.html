@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Sailor Piece: Elite Monitor</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, sans-serif; 
+            background-color: #0b0b0b; 
+            color: white; 
+            padding: 20px; 
+            margin: 0;
+        }
+        
+        .header-section { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 25px; 
+            padding: 10px 20px;
+            background: #161616;
+            border-radius: 15px;
+            border: 1px solid #333;
+            position: sticky;
+            top: 10px;
+            z-index: 1000;
+        }
+
+        h2 { margin: 0; font-size: 1.5em; color: #fff; }
+        
+        /* 🔍 Search Bar Style */
+        #search-input { 
+            padding: 12px 25px; 
+            width: 350px; 
+            border-radius: 30px; 
+            border: 1px solid #444; 
+            background: #222; 
+            color: #00ffcc; 
+            font-size: 1em; 
+            outline: none; 
+            transition: 0.3s;
+        }
+        #search-input:focus { 
+            border-color: #00ffcc; 
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3); 
+        }
+
+        .grid-container { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
+            gap: 20px; 
+        }
+        
+        .card { 
+            background: #181818; 
+            border: 1px solid #2a2a2a; 
+            border-radius: 12px; 
+            padding: 18px; 
+            transition: 0.2s; 
+            position: relative;
+            overflow: hidden;
+        }
+        .card:hover { 
+            border-color: #00ffcc; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        
+        .card h3 { 
+            margin: 0 0 12px 0; 
+            color: #00ffcc; 
+            font-size: 1.2em; 
+            width: 70%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .update-time { 
+            font-size: 0.75em; 
+            color: #555; 
+            position: absolute; 
+            top: 20px; 
+            right: 18px; 
+        }
+        
+        .stat-bar { 
+            background: #222; 
+            padding: 10px; 
+            margin-bottom: 15px; 
+            border-radius: 8px; 
+            display: flex; 
+            justify-content: space-around; 
+            font-size: 0.9em; 
+        }
+        .money { color: #ffd700; font-weight: bold; }
+        .bounty { color: #ff4d4d; font-weight: bold; }
+
+        .item-list { 
+            list-style: none; 
+            padding: 0; 
+            margin: 0; 
+            max-height: 250px; 
+            overflow-y: auto; 
+            border-top: 1px solid #2a2a2a;
+        }
+        .item-list li { 
+            padding: 8px 5px; 
+            display: flex; 
+            justify-content: space-between; 
+            font-size: 0.85em; 
+            border-bottom: 1px solid #222;
+        }
+        .item-name { color: #aaa; }
+        .item-qty { color: #00ffcc; font-weight: bold; }
+
+        /* 🌟 Highlight & Sort Style */
+        .highlight-match { 
+            background-color: rgba(0, 255, 204, 0.15); 
+            border-left: 3px solid #00ffcc;
+            padding-left: 10px !important;
+        }
+        .highlight-match .item-name { color: #fff; font-weight: bold; }
+
+        /* Scrollbar */
+        .item-list::-webkit-scrollbar { width: 4px; }
+        .item-list::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="header-section">
+        <h2>🚢 Sailor Piece Monitor <span id="total-accs" style="color: #555; font-size: 0.6em; margin-left: 10px;"></span></h2>
+        <input type="text" id="search-input" placeholder="🔍 ค้นหาไอเทม (จะถูกดีดขึ้นบรรทัดแรก)..." onkeyup="renderDashboard()">
+    </div>
+
+    <div class="grid-container" id="dashboard">
+        </div>
+
+    <script>
+        // เปลี่ยน URL เป็น Firebase ของคุณ
+        const FIREBASE_URL = "https://test-29638-default-rtdb.asia-southeast1.firebasedatabase.app/inventory.json";
+        let cachedData = {};
+
+        async function fetchData() {
+            try {
+                const response = await fetch(FIREBASE_URL);
+                if (!response.ok) throw new Error('Network response was not ok');
+                cachedData = await response.json();
+                renderDashboard();
+            } catch (e) { 
+                console.error("Fetch error:", e); 
+            }
+        }
+
+        function renderDashboard() {
+            const container = document.getElementById('dashboard');
+            const searchTag = document.getElementById('search-input').value.toLowerCase();
+            container.innerHTML = '';
+            
+            let count = 0;
+            for (let id in cachedData) {
+                const acc = cachedData[id];
+                const username = (acc.username || 'Unknown').toLowerCase();
+                const items = acc.items || [];
+                
+                // ตรวจสอบการค้นหา
+                const itemMatch = items.some(i => i.toLowerCase().includes(searchTag));
+                const userMatch = username.includes(searchTag);
+
+                if (searchTag === "" || itemMatch || userMatch) {
+                    count++;
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    
+                    let bounty = "0", money = "0";
+                    let matchedHtml = ""; // สำหรับเก็บของที่ตรงคำค้นหา (Priority 1)
+                    let normalHtml = "";  // สำหรับของอื่นๆ
+
+                    items.forEach(str => {
+                        const parts = str.split(':');
+                        const name = parts[0];
+                        const val = parts[1] || "0";
+
+                        if (name === "Bounty") bounty = val;
+                        else if (name === "Money") money = val;
+                        else {
+                            const isMatch = searchTag !== "" && name.toLowerCase().includes(searchTag);
+                            const row = `
+                                <li class="${isMatch ? 'highlight-match' : ''}">
+                                    <span class="item-name">${name}</span>
+                                    <span class="item-qty">x${Number(val).toLocaleString()}</span>
+                                </li>`;
+                            
+                            if (isMatch) matchedHtml += row;
+                            else normalHtml += row;
+                        }
+                    });
+
+                    card.innerHTML = `
+                        <span class="update-time">🕒 ${acc.time || '--:--'}</span>
+                        <h3>${acc.username || 'Unknown'}</h3>
+                        <div class="stat-bar">
+                            <span class="money">💰 ${Number(money).toLocaleString()}</span>
+                            <span class="bounty">⚔️ ${Number(bounty).toLocaleString()}</span>
+                        </div>
+                        <ul class="item-list">
+                            ${matchedHtml} 
+                            ${normalHtml || '<li>ว่างเปล่า</li>'}
+                        </ul>
+                    `;
+                    container.appendChild(card);
+                }
+            }
+            document.getElementById('total-accs').innerText = `(พบ ${count} จอ)`;
+        }
+
+        // อัปเดตอัตโนมัติทุก 10 วินาที
+        setInterval(fetchData, 10000);
+        
+        // โหลดครั้งแรกทันที
+        fetchData();
+    </script>
+</body>
+</html>
